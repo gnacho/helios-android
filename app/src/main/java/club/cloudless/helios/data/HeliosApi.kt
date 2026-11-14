@@ -63,9 +63,11 @@ class HeliosApi(
             }
         }
     } catch (e: IOException) {
-        ApiResult.Error("No se pudo conectar con el servidor")
+        // El tipo de excepción es la diferencia entre "no hay red", "el DNS no
+        // resuelve" y "el certificado no vale": sin él, depurar es adivinar.
+        ApiResult.Error("No se pudo conectar con el servidor (" + (e::class.simpleName ?: "error") + ")")
     } catch (e: Exception) {
-        ApiResult.Error("Respuesta no válida del servidor")
+        ApiResult.Error("Respuesta no válida del servidor (" + (e::class.simpleName ?: "error") + ")")
     }
 
     companion object {

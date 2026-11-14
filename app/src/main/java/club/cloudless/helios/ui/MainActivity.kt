@@ -39,7 +39,13 @@ class MainActivity : Activity() {
 
     private fun open(url: String) {
         val uri = Uri.parse(url)
-        val provider = CustomTabsClient.getPackageName(this, null)
+        // A Trusted Web Activity is Chrome-only in practice: the browser must
+        // implement the TWA protocol on top of Custom Tabs, and a browser that
+        // only speaks Custom Tabs shows a toolbar with the URL and a close
+        // button (Fennec does exactly that). Asking for "the default browser"
+        // therefore picks the wrong one, so this asks for a known TWA-capable
+        // package first and only then falls back.
+        val provider = CustomTabsClient.getPackageName(this, TWA_BROWSERS)
         if (provider == null) {
             fallback(uri)
             return
@@ -75,6 +81,19 @@ class MainActivity : Activity() {
     private fun fallback(uri: Uri) {
         runCatching { startActivity(Intent(Intent.ACTION_VIEW, uri)) }
         finish()
+    }
+
+    private companion object {
+        /** Browsers that implement Trusted Web Activity, Chrome first. */
+        val TWA_BROWSERS = listOf(
+            "com.android.chrome",
+            "com.chrome.beta",
+            "com.chrome.dev",
+            "com.brave.browser",
+            "com.microsoft.emmx",
+            "com.sec.android.app.sbrowser",
+            "com.vivaldi.browser",
+        )
     }
 
     override fun onDestroy() {

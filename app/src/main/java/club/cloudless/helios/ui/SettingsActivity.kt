@@ -29,14 +29,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import club.cloudless.helios.BuildConfig
 import club.cloudless.helios.config.ConfigStore
 import club.cloudless.helios.data.ApiResult
 import club.cloudless.helios.data.HeliosApi
 import club.cloudless.helios.widget.WidgetRefreshWorker
+import club.cloudless.helios.widget.WidgetText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -72,6 +75,44 @@ class SettingsActivity : ComponentActivity() {
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * Estado real de la app, no una promesa: versión, cuándo se refrescó el widget y
+ * el último error tal cual lo dio el cliente HTTP. Es lo que hace falta para
+ * distinguir red, token y servidor sin adivinar.
+ */
+@Composable
+private fun Diagnostics() {
+    val context = LocalContext.current
+    val cfg = remember { ConfigStore.create(context) }
+    val snapshot = remember { cfg.snapshot() }
+    val error = remember { cfg.error() }
+    val version = BuildConfig.VERSION_NAME
+
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text("Diagnóstico", style = MaterialTheme.typography.labelLarge)
+        Text("Versión $version", style = MaterialTheme.typography.bodySmall)
+        Text(
+            "Servidor: " + cfg.baseUrl.ifEmpty { "sin configurar" },
+            style = MaterialTheme.typography.bodySmall,
+        )
+        Text(
+            "Token: " + if (cfg.token.isEmpty()) "sin configurar" else cfg.token.take(6) + "… (" + cfg.token.length + " caracteres)",
+            style = MaterialTheme.typography.bodySmall,
+        )
+        Text(
+            "Último dato: " + if (snapshot == null) "ninguno" else WidgetText.freshness(snapshot.fetchedAtMillis, System.currentTimeMillis()),
+            style = MaterialTheme.typography.bodySmall,
+        )
+        if (error.isNotEmpty()) {
+            Text(
+                "Último error: $error",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
         }
     }
 }
@@ -179,5 +220,7 @@ private fun SettingsScreen(
 
         Spacer(Modifier.height(8.dp))
         TextButton(onClick = onOpenApp) { Text("Abrir Helios sin guardar") }
+        Spacer(Modifier.height(16.dp))
+        Diagnostics()
     }
 }
