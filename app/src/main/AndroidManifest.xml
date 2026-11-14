@@ -4,6 +4,17 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!--
+      Package visibility (Android 11+): without this the app cannot see Chrome's
+      CustomTabsService, CustomTabsClient.getPackageName returns null and the
+      Trusted Web Activity silently degrades to a plain browser tab.
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
+        </intent>
+    </queries>
+
     <application
         android:name=".HeliosApp"
         android:allowBackup="false"
