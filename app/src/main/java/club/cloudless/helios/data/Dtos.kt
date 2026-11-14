@@ -34,14 +34,41 @@ data class ExtensionsDto(
     val bydActive: Boolean = false,
 )
 
-/** What the widget renders. Built from one HTTP round trip plus the charger call. */
+/** One charger from `GET /api/charger/state` (Helios 1.2.11+). */
+@Serializable
+data class ChargerDto(
+    val key: String = "",
+    val name: String = "",
+    val charging: Boolean = false,
+    val connected: Boolean = false,
+    val state: String? = null,
+    @SerialName("powerKw") val powerKw: Double = 0.0,
+    @SerialName("powerKnown") val powerKnown: Boolean = false,
+    @SerialName("deviceOffline") val deviceOffline: Boolean = false,
+    @SerialName("sessionKwh") val sessionKwh: Double? = null,
+    @SerialName("totalKwh") val totalKwh: Double? = null,
+    @SerialName("switchOn") val switchOn: Boolean? = null,
+)
+
+/** Shape of `GET /api/charger/state`. Empty list means no charger configured. */
+@Serializable
+data class ChargerStateDto(
+    val active: Boolean = false,
+    val chargers: List<ChargerDto> = emptyList(),
+)
+
+/** What the widgets render. Built from one refresh, stored as is. */
 @Serializable
 data class WidgetSnapshot(
     val soc: Double,
     val productionKw: Double,
     val consumptionKw: Double?,
     val batteryPower: Double,
-    val chargerActive: Boolean?,
     val connected: Boolean,
     val fetchedAtMillis: Long,
-)
+    val chargersActive: Boolean = false,
+    val chargers: List<ChargerDto> = emptyList(),
+) {
+    /** A home screen widget is not a dashboard: the first charger is enough. */
+    val mainCharger: ChargerDto? get() = chargers.firstOrNull()
+}

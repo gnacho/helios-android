@@ -1,5 +1,7 @@
 package club.cloudless.helios
 
+import club.cloudless.helios.data.ChargerDto
+import club.cloudless.helios.data.ChargerStateDto
 import club.cloudless.helios.data.ExtensionsDto
 import club.cloudless.helios.data.HeliosApi
 import club.cloudless.helios.data.LiveDto
@@ -84,6 +86,17 @@ class WidgetTextTest {
     }
 
     @Test
+    fun `charger line says what the car is doing`() {
+        assertEquals("cargando · 2,60 kW", WidgetText.chargerLine(true, true, 2.6, true, false))
+        assertEquals("cargando", WidgetText.chargerLine(true, true, 0.0, false, false))
+        assertEquals("conectado", WidgetText.chargerLine(false, true, 0.0, true, false))
+        assertEquals("en reposo", WidgetText.chargerLine(false, false, 0.0, true, false))
+        assertEquals("sin conexión", WidgetText.chargerLine(false, false, 0.0, false, true))
+        assertEquals("1,20 kWh", WidgetText.kwh(1.2))
+        assertEquals("sin dato", WidgetText.kwh(null))
+    }
+
+    @Test
     fun `battery label follows the same 0,05 kW threshold as the web UI`() {
         assertEquals("Cargando", WidgetText.batteryLabel(0.051))
         assertEquals("Descargando", WidgetText.batteryLabel(-0.051))
@@ -104,20 +117,37 @@ class WidgetTextTest {
 class SnapshotMapperTest {
 
     @Test
-    fun `charger is reported only when the extension is enabled`() {
+    fun `chargers are kept only when the server reports them active`() {
         val live = LiveDto(soc = 50.0, production = 1.0, batteryPower = 0.2, connected = true)
+        val charger = ChargerDto(key = "main", name = "Coche", charging = true, powerKw = 2.6, powerKnown = true)
 
-        val enabledAndOn = SnapshotMapper.from(live, ExtensionsDto(enabled = true, chargerActive = true), 1L)
-        assertEquals(true, enabledAndOn.chargerActive)
+        val active = SnapshotMapper.from(live, null, ChargerStateDto(active = true, chargers = listOf(charger)), 1L)
+        assertEquals(true, active.chargersActive)
+        assertEquals("Coche", active.mainCharger?.name)
 
-        val enabledAndOff = SnapshotMapper.from(live, ExtensionsDto(enabled = true, chargerActive = false), 1L)
-        assertEquals(false, enabledAndOff.chargerActive)
+        val inactive = SnapshotMapper.from(live, null, ChargerStateDto(active = false, chargers = listOf(charger)), 1L)
+        assertEquals(false, inactive.chargersActive)
+        assertNull(inactive.mainCharger)
 
-        val disabled = SnapshotMapper.from(live, ExtensionsDto(enabled = false, chargerActive = true), 1L)
-        assertNull(disabled.chargerActive)
+        // Un servidor anterior a 1.2.11 responde 404: sin estado de cargador.
+        val old = SnapshotMapper.from(live, null, null, 1L)
+        assertEquals(false, old.chargersActive)
+        assertNull(old.mainCharger)
+    }
 
-        val noExtensions = SnapshotMapper.from(live, null, 1L)
-        assertNull(noExtensions.chargerActive)
+    @Test
+    fun `charger state payload parses the Go shape`() {
+        val raw = """
+            {"active":true,"chargers":[{"key":"main","name":"Coche","charging":true,"connected":true,
+            "state":"charger_charging","powerKw":2.605,"powerKnown":true,"sessionKwh":1.2,
+            "totalKwh":4.69,"switchOn":true,"ampOptions":[6,10,16]}]}
+        """.trimIndent()
+        val json = Json { ignoreUnknownKeys = true; explicitNulls = false; coerceInputValues = true }
+        val st = json.decodeFromString(ChargerStateDto.serializer(), raw)
+        assertEquals(true, st.active)
+        assertEquals("Coche", st.chargers.first().name)
+        assertEquals(true, st.chargers.first().charging)
+        assertEquals(1.2, st.chargers.first().sessionKwh!!, 1e-9)
     }
 }
 

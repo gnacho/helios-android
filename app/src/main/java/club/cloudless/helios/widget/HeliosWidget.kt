@@ -91,6 +91,14 @@ class HeliosWidget : GlanceAppWidget() {
         Metric("Producción", WidgetText.kw(snapshot.productionKw), colors)
         Spacer(GlanceModifier.height(4.dp))
         Metric("Consumo", WidgetText.kw(snapshot.consumptionKw), colors)
+        snapshot.mainCharger?.let { chg ->
+            Spacer(GlanceModifier.height(4.dp))
+            Metric(
+                chg.name.ifBlank { "Coche" },
+                WidgetText.chargerLine(chg.charging, chg.connected, chg.powerKw, chg.powerKnown, chg.deviceOffline),
+                colors,
+            )
+        }
         Spacer(GlanceModifier.height(8.dp))
         Text(
             text = "Actualizado " + WidgetText.freshness(snapshot.fetchedAtMillis, System.currentTimeMillis()),

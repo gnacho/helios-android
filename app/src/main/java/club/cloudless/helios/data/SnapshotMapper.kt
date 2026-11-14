@@ -1,19 +1,24 @@
 package club.cloudless.helios.data
 
-/** Turns the API payloads into the values the widget shows. */
+/** Turns the API payloads into the values the widgets show. */
 object SnapshotMapper {
 
-    fun from(live: LiveDto, extensions: ExtensionsDto?, nowMillis: Long): WidgetSnapshot =
-        WidgetSnapshot(
+    fun from(
+        live: LiveDto,
+        extensions: ExtensionsDto?,
+        chargerState: ChargerStateDto?,
+        nowMillis: Long,
+    ): WidgetSnapshot {
+        val active = chargerState?.active == true && chargerState.chargers.isNotEmpty()
+        return WidgetSnapshot(
             soc = live.soc,
             productionKw = live.production,
             consumptionKw = live.consumption,
             batteryPower = live.batteryPower,
-            // `chargerActive` is already the server's verdict (extensions on, car
-            // charger on, at least one charger configured). When the extension is
-            // missing or off there is no charger to report, so null.
-            chargerActive = extensions?.takeIf { it.enabled }?.chargerActive,
             connected = live.connected,
             fetchedAtMillis = nowMillis,
+            chargersActive = active,
+            chargers = if (active) chargerState.chargers else emptyList(),
         )
+    }
 }

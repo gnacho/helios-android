@@ -40,4 +40,18 @@ object WidgetText {
 
     fun clock(millis: Long): String =
         SimpleDateFormat("HH:mm", locale).format(Date(millis))
+
+    /** One line for the main widget: what the car charger is doing right now. */
+    fun chargerLine(charging: Boolean, connected: Boolean, powerKw: Double, powerKnown: Boolean, offline: Boolean): String =
+        when {
+            offline -> "sin conexión"
+            charging && powerKnown -> "cargando · " + kw(powerKw)
+            charging -> "cargando"
+            connected -> "conectado"
+            else -> "en reposo"
+        }
+
+    /** Session energy, only when the server actually has the number. */
+    fun kwh(value: Double?): String =
+        if (value == null) "sin dato" else String.format(locale, "%.2f kWh", value)
 }

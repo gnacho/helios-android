@@ -32,6 +32,10 @@ class HeliosApi(
 
     fun extensions(): ApiResult<ExtensionsDto> = get("/api/extensions", ExtensionsDto.serializer())
 
+    /** Helios 1.2.11 and later. An older server answers 404 and the widget degrades. */
+    fun chargerState(): ApiResult<ChargerStateDto> =
+        get("/api/charger/state", ChargerStateDto.serializer())
+
     /** `/api/version` is public: it proves the URL points at a Helios server. */
     fun version(): ApiResult<String> {
         val req = Request.Builder().url("$baseUrl/api/version").get().build()

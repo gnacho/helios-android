@@ -6,4 +6,6 @@
     <string name="widget_description">Batería, producción y consumo de un vistazo</string>
     <string name="shortcut_settings_short">Ajustes</string>
     <string name="shortcut_settings_long">Configurar servidor y token</string>
+    <string name="charger_widget_label">Coche · Helios</string>
+    <string name="charger_widget_description">Estado del cargador del coche</string>
 </resources>

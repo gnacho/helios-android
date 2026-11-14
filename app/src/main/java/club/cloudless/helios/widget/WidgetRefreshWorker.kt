@@ -49,10 +49,19 @@ class WidgetRefreshWorker(
 
             is ApiResult.Ok -> {
                 val extensions = (api.extensions() as? ApiResult.Ok)?.value
-                val snapshot = SnapshotMapper.from(live.value, extensions, System.currentTimeMillis())
+                // Un servidor anterior a 1.2.11 responde 404 aquí: el widget de
+                // solar sigue valiendo y el del coche muestra su estado vacío.
+                val chargerState = (api.chargerState() as? ApiResult.Ok)?.value
+                val snapshot = SnapshotMapper.from(
+                    live.value,
+                    extensions,
+                    chargerState,
+                    System.currentTimeMillis(),
+                )
                 cfg.saveSnapshot(snapshot)
                 cfg.clearError()
                 widgets.updateAll(applicationContext)
+                ChargerWidget().updateAll(applicationContext)
                 return Result.success()
             }
         }
