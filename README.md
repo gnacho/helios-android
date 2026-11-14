@@ -1,5 +1,9 @@
 # helios-android
 
+Android app for Helios: Trusted Web Activity shell plus a home screen widget.
+
+License: AGPL-3.0, the same as Helios.
+
 Android app for [Helios](https://github.com/gnacho/helios), the solar dashboard.
 
 It does two things and nothing else:
